@@ -1,0 +1,137 @@
+.report-folder-page {
+  min-height: 100vh;
+  background-color: #f4f4f4;
+  display: flex;
+  gap: 0;
+}
+
+/* ── Main content area ── */
+.report-folder-main {
+  flex: 1;
+  padding: 2rem;
+  max-width: 820px;
+  min-width: 0;
+}
+
+/* ── Report header ── */
+.report-header-tile {
+  padding: 1.5rem !important;
+  margin-bottom: 1.5rem;
+  border-left: 4px solid #0f62fe;
+}
+
+.report-header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.report-header-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #161616;
+  margin: 0 0 0.25rem 0;
+}
+
+.report-header-purpose {
+  font-size: 0.875rem;
+  color: #525252;
+  margin: 0;
+}
+
+.report-header-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Section headings ── */
+.section-heading {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #161616;
+  margin: 0 0 0.75rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Available expenses table ── */
+.available-expenses-section {
+  margin-bottom: 1.5rem;
+}
+
+.available-expenses-tile {
+  padding: 1.25rem !important;
+}
+
+/* ── Receipt upload ── */
+.receipt-upload-section {
+  margin-bottom: 1.5rem;
+}
+
+.receipt-upload-tile {
+  padding: 1.25rem !important;
+}
+
+/* ── Processed expenses ── */
+.processed-expenses-section {
+  margin-bottom: 1.5rem;
+}
+
+.processed-expenses-tile {
+  padding: 1.25rem !important;
+}
+
+.expense-row-matched {
+  color: #24a148;
+  font-weight: 500;
+}
+
+.expense-row-unmatched {
+  color: #da1e28;
+}
+
+/* ── Warnings list ── */
+.warnings-section {
+  margin-bottom: 1.5rem;
+}
+
+/* ── Submit bar ── */
+.submit-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #ffffff;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 0.5rem;
+}
+
+.submit-bar-info {
+  font-size: 0.875rem;
+  color: #525252;
+  flex: 1;
+}
+
+/* ── Confirmation box ── */
+.confirmation-tile {
+  padding: 1.5rem !important;
+  background-color: #defbe6 !important;
+  border-left: 4px solid #24a148;
+  margin-bottom: 1.5rem;
+}
+
+.confirmation-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0e6027;
+  margin: 0 0 0.25rem 0;
+}
+
+.confirmation-id {
+  font-size: 0.875rem;
+  color: #0e6027;
+  margin: 0;
+}
