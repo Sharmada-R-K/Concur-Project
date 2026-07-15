@@ -24,12 +24,16 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     receipts = [
-        ("hotel_marriott.pdf", _hotel_content()),
-        ("taxi_ola.pdf", _taxi_content()),
-        ("flight_indigo.pdf", _flight_content()),
-        ("meals_restaurant.pdf", _meals_content()),
-        ("meals_conference.pdf", _conference_content()),
-        ("misc_pharmacy.pdf", _pharmacy_content()),
+        ("hotel_marriott.pdf",      _hotel_content()),
+        ("taxi_ola.pdf",            _taxi_content()),
+        ("flight_indigo.pdf",       _flight_content()),
+        ("meals_restaurant.pdf",    _meals_content()),
+        ("meals_conference.pdf",    _conference_content()),
+        ("misc_pharmacy.pdf",       _pharmacy_content()),
+        # Duplicate detection test — identical to hotel_marriott.pdf
+        # Upload this AFTER hotel_marriott.pdf in a second report for EMP001.
+        # Layer 3 Step 6 will flag DUPLICATE_RECEIPT_DETECTED.
+        ("duplicate_hotel_marriott.pdf", _hotel_content()),
     ]
 
     for filename, lines in receipts:

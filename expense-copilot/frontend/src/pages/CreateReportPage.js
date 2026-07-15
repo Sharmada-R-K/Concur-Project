@@ -13,9 +13,21 @@ import {
 import { createReport } from '../services/reportService';
 import './CreateReportPage.css';
 
-const POLICIES = [
-  { value: 'TRAVEL_AND_EXPENSE_AP_NON_VAT', label: 'Travel and Expense (AP Non-VAT)' },
+// Employees map to cities and policies — selecting an employee determines
+// which card transactions appear (Layer 3 filters by employeeId).
+const EMPLOYEES = [
+  { value: 'EMP001', label: 'Priya Sharma — Bengaluru (STANDARD)' },
+  { value: 'EMP002', label: 'Arjun Mehta — Hyderabad (STANDARD)' },
+  { value: 'EMP003', label: 'Kavita Nair — Delhi (EXECUTIVE)' },
+  { value: 'EMP004', label: 'Rohan Desai — Bengaluru (EXECUTIVE)' },
 ];
+
+const EMPLOYEE_POLICY = {
+  EMP001: 'STANDARD',
+  EMP002: 'STANDARD',
+  EMP003: 'EXECUTIVE',
+  EMP004: 'EXECUTIVE',
+};
 
 const CATEGORIES = [
   { value: 'CONFERENCE_TRADESHOW_CUSTOMER', label: 'Conference/Tradeshow (Customer/Client Related Travel)' },
@@ -33,6 +45,7 @@ function CreateReportPage() {
   const [fields, setFields] = useState({
     reportName: '',
     businessPurpose: '',
+    employeeId: '',
     policy: '',
     reportCategory: '',
   });
@@ -42,11 +55,16 @@ function CreateReportPage() {
   const isValid =
     fields.reportName.trim() &&
     fields.businessPurpose.trim() &&
-    fields.policy &&
+    fields.employeeId &&
     fields.reportCategory;
 
   function handleChange(field, value) {
-    setFields(prev => ({ ...prev, [field]: value }));
+    if (field === 'employeeId') {
+      // Auto-set policy based on selected employee
+      setFields(prev => ({ ...prev, employeeId: value, policy: EMPLOYEE_POLICY[value] || '' }));
+    } else {
+      setFields(prev => ({ ...prev, [field]: value }));
+    }
     if (error) setError(null);
   }
 
@@ -116,15 +134,15 @@ function CreateReportPage() {
             />
 
             <Select
-              id="policy"
-              labelText="Travel Policy"
-              value={fields.policy}
-              onChange={e => handleChange('policy', e.target.value)}
+              id="employeeId"
+              labelText="Employee"
+              value={fields.employeeId}
+              onChange={e => handleChange('employeeId', e.target.value)}
               required
             >
-              <SelectItem value="" text="Select a policy" />
-              {POLICIES.map(p => (
-                <SelectItem key={p.value} value={p.value} text={p.label} />
+              <SelectItem value="" text="Select an employee" />
+              {EMPLOYEES.map(e => (
+                <SelectItem key={e.value} value={e.value} text={e.label} />
               ))}
             </Select>
 

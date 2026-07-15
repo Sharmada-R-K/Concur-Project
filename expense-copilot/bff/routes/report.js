@@ -70,7 +70,7 @@ function toL3ExpenseInput(exp) {
     currency:        exp.currency || 'INR',
     transactionDate: exp.transactionDate || new Date().toISOString().split('T')[0],
     city:            exp.city     || 'UNKNOWN',
-    paymentType:     exp.paymentType || 'OUT_OF_POCKET',
+    paymentType:     (exp.paymentType === 'OUT_OF_POCKET' ? 'PERSONAL_CASH' : exp.paymentType) || 'PERSONAL_CASH',
   };
 
   // Build itemization for HOTEL
@@ -133,13 +133,12 @@ function toL3ExpenseInput(exp) {
 // it in Layer 3 so the submit step can find it later.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
-  const { reportName, businessPurpose, policy, reportCategory } = req.body;
+  const { reportName, businessPurpose, employeeId, policy, reportCategory } = req.body;
 
   // Validate all 4 mandatory fields
   const missing = [];
   if (!reportName)      missing.push('reportName');
   if (!businessPurpose) missing.push('businessPurpose');
-  if (!policy)          missing.push('policy');
   if (!reportCategory)  missing.push('reportCategory');
 
   if (missing.length > 0) {
@@ -148,13 +147,16 @@ router.post('/', async (req, res) => {
 
   const reportId = `RPT-${uuidv4().slice(0, 8).toUpperCase()}`;
 
+  // Use submitted employeeId if provided, otherwise fall back to EMP001
+  const resolvedEmployeeId = employeeId || DEFAULT_EMPLOYEE_ID;
+
   try {
     // Register in Layer 3 so submit can find it
     await layer3.createReport(reportId, {
-      employeeId: DEFAULT_EMPLOYEE_ID,
+      employeeId: resolvedEmployeeId,
       reportName,
       businessPurpose,
-      policy,
+      policy: policy || 'STANDARD',
       reportCategory,
     });
   } catch (err) {
@@ -163,10 +165,10 @@ router.post('/', async (req, res) => {
   }
 
   const folder = reportStore.create(reportId, {
-    employeeId: DEFAULT_EMPLOYEE_ID,
+    employeeId: resolvedEmployeeId,
     reportName,
     businessPurpose,
-    policy,
+    policy: policy || 'STANDARD',
     reportCategory,
   });
 
