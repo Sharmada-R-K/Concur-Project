@@ -22,7 +22,7 @@ async function processReceipts(reportId, employeeId, files) {
   const response = await axios.post(
     `${LAYER2_BASE_URL}/pipeline/run`,
     form,
-    { headers: form.getHeaders(), timeout: 300000 }
+    { headers: form.getHeaders(), timeout: 600000 }   // 10 min — Docling OCR is slow on CPU-only VM
   );
   return response.data;
 }

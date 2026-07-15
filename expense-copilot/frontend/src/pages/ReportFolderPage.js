@@ -172,22 +172,28 @@ function ReportFolderPage() {
 
     // Animate OCR step
     setStep('OCR', 'active');
-    addAgentMessage(`Sending ${files.length} receipt${files.length !== 1 ? 's' : ''} for OCR processing via Docling…`);
+    const estSecs = files.length * 45;
+    const estMins = Math.ceil(estSecs / 60);
+    addAgentMessage(
+      `Sending ${files.length} receipt${files.length !== 1 ? 's' : ''} for OCR processing via Docling…\n` +
+      `⏱ Estimated time: ~${estMins} min${estMins !== 1 ? 's' : ''} (${files.length} × ~45s per receipt on this VM)`
+    );
 
     try {
       // Simulate stage transitions during the API call
       // (The actual stages happen inside Layer 2 — we show approximate progress)
+      const perReceiptMs = 45000;
       const ocrTimer = setTimeout(() => {
         setStep('OCR', 'done');
         setStep('AI_EXTRACT', 'active');
         addAgentMessage('OCR complete ✅ — Ollama LLM now extracting fields (vendor, amount, date, city)…');
-      }, 3000);
+      }, Math.max(files.length * perReceiptMs * 0.6, 5000));
 
       const aiTimer = setTimeout(() => {
         setStep('AI_EXTRACT', 'done');
         setStep('MATCHING', 'active');
         addAgentMessage('AI extraction complete ✅ — Matching receipts to corporate card transactions…');
-      }, 8000);
+      }, Math.max(files.length * perReceiptMs * 0.85, 10000));
 
       const data = await processReceipts(reportId, files);
 
@@ -223,10 +229,11 @@ function ReportFolderPage() {
       setStep('AI_EXTRACT', 'idle');
       setStep('MATCHING',   'idle');
       setFolderStatus('EXPENSES_LOADED');
-      const msg = err.response?.data?.error
-        || err.response?.data?.detail
-        || 'Receipt processing failed.';
-      addAgentMessage(`❌ Processing failed: ${msg}\nPlease try uploading again.`);
+      const isTimeout = err.code === 'ECONNABORTED' || err.message?.includes('timeout');
+      const msg = isTimeout
+        ? `Request timed out — ${files.length} receipts took too long. Try uploading fewer receipts at a time (2–3 max).`
+        : (err.response?.data?.error || err.response?.data?.detail || 'Receipt processing failed.');
+      addAgentMessage(`❌ Processing failed: ${msg}\nTip: Upload 2–3 receipts at a time for best results.`);
     } finally {
       setProcessing(false);
     }
