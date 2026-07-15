@@ -196,15 +196,9 @@ router.get('/:reportId', (req, res) => {
 // We normalise to { reportId, totalCount, transactions[] }.
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/:reportId/transactions', async (req, res) => {
-  let folder = reportStore.get(req.params.reportId);
+  const folder = reportStore.get(req.params.reportId);
   if (!folder) {
-    folder = reportStore.create(req.params.reportId, {
-      employeeId: DEFAULT_EMPLOYEE_ID,
-      reportName: req.params.reportId,
-      businessPurpose: '',
-      policy: 'STANDARD',
-      reportCategory: 'CUSTOMER_CLIENT_RELATED_TRAVEL',
-    });
+    return res.status(404).json({ error: 'Report not found', reportId: req.params.reportId });
   }
 
   try {
@@ -289,19 +283,9 @@ router.post('/:reportId/receipts', upload.array('files'), async (req, res) => {
 // Updates folder status to SUBMITTED on success.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/:reportId/submit', async (req, res) => {
-  let folder = reportStore.get(req.params.reportId);
+  const folder = reportStore.get(req.params.reportId);
   if (!folder) {
-    // BFF restarted and lost in-memory state — reconstruct a minimal folder
-    // so submit can still proceed. processedExpenses will be empty which is
-    // fine: the expenses were already posted to Layer 3 during the receipt
-    // upload stage, so only the PATCH submit transition is needed.
-    folder = reportStore.create(req.params.reportId, {
-      employeeId: DEFAULT_EMPLOYEE_ID,
-      reportName: req.params.reportId,
-      businessPurpose: '',
-      policy: 'STANDARD',
-      reportCategory: 'CUSTOMER_CLIENT_RELATED_TRAVEL',
-    });
+    return res.status(404).json({ error: 'Report not found', reportId: req.params.reportId });
   }
 
   if (folder.status === 'SUBMITTED') {
