@@ -1,0 +1,45 @@
+# ── Python virtual environments ──────────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# ── Environment variable files (contain secrets) ─────────────────────────────
+.env
+!.env.example
+
+# ── Node.js ───────────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── React build output ────────────────────────────────────────────────────────
+expense-copilot/frontend/build/
+
+# ── SQLite database files (auto-created on first run from seed data) ──────────
+*.db
+*.db-shm
+*.db-wal
+
+# ── macOS system files ────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+
+# ── IDE / editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── pytest cache ──────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ── Layer 2 Docling model cache (downloaded on first run) ─────────────────────
+layer2-middleware/.docling/
