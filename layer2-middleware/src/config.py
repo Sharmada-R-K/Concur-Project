@@ -30,9 +30,11 @@ OLLAMA_HOST: str = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
 
 # Generation params — deterministic output for structured extraction
+# num_predict=1024: hotel receipts with itemization can produce 600-800 token
+# responses; 512 caused JSON truncation mid-object → silent empty dict fallback.
 OLLAMA_PARAMS: dict = {
     "temperature": 0,
-    "num_predict": 512,
+    "num_predict": 1024,
 }
 
 
@@ -77,11 +79,27 @@ LOG_LEVEL: str = os.getenv("LOG_LEVEL", "info").upper()
 
 # ── Capability check ─────────────────────────────────────────────────────────
 
+# ── Ollama availability cache ─────────────────────────────────────────────────
+# Cached per-process so we only pay the HTTP round-trip once per worker start,
+# not once per receipt per stage (which was 14 extra calls in a 7-receipt batch).
+_ollama_available: bool | None = None
+
+
 def ollama_configured() -> bool:
-    """Return True if Ollama server is reachable."""
+    """
+    Return True if Ollama server is reachable.
+
+    Result is cached for the lifetime of the process.  This avoids making
+    14+ health-check HTTP calls during a single 7-receipt batch — each call
+    consumed ~50 ms and could fail under CPU load.
+    """
+    global _ollama_available
+    if _ollama_available is not None:
+        return _ollama_available
     try:
         import urllib.request
-        with urllib.request.urlopen(f"{OLLAMA_HOST}/api/tags", timeout=3) as resp:
-            return resp.status == 200
+        with urllib.request.urlopen(f"{OLLAMA_HOST}/api/tags", timeout=5) as resp:
+            _ollama_available = resp.status == 200
     except Exception:
-        return False
+        _ollama_available = False
+    return _ollama_available

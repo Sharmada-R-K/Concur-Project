@@ -251,10 +251,24 @@ def _normalise_vendor(name: str) -> str:
 
 
 def _parse_date_str(date_str: str) -> Optional[date]:
-    """Parse YYYY-MM-DD date string to date object."""
+    """
+    Parse a date string from Layer 3 card-transaction data.
+
+    Layer 3 (concur-stub) stores dates as ISO YYYY-MM-DD strings, so that
+    format is tried first.  A handful of real-world edge cases (timezone
+    suffixes, different separators) are handled as fallbacks.
+    """
     if not date_str:
         return None
+    # Primary: ISO format returned by concur-stub
     try:
-        return date.fromisoformat(date_str)
+        # Accept "YYYY-MM-DD" and "YYYY-MM-DDTHH:MM:SS…" (ISO with time)
+        return date.fromisoformat(date_str[:10])
     except ValueError:
+        pass
+    # Fallback: delegate to extraction_service helper which handles all known formats
+    try:
+        from src.services.extraction_service import _parse_date as _ext_parse
+        return _ext_parse(date_str)
+    except Exception:
         return None

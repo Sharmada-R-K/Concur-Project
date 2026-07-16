@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from datetime import date
 from typing import Optional
 
@@ -45,14 +46,33 @@ async def extract(
         logger.warning("Ollama not running — using heuristic extraction fallback.")
         return _heuristic_fallback(ocr_result, cat_result)
 
-    try:
-        raw_response = _call_ollama_extraction(ocr_result.raw_text, cat_result.expense_type)
-        parsed = _extract_json(raw_response)
-        logger.debug("Ollama extraction parsed fields: %s", list(parsed.keys()))
-        return _build_extracted_expense(parsed, cat_result.expense_type, ocr_result)
-    except Exception as exc:
-        logger.warning("Ollama extraction failed: %s — using heuristic fallback", exc)
-        return _heuristic_fallback(ocr_result, cat_result)
+    last_exc: Exception | None = None
+    for attempt in range(2):            # 1 attempt + 1 retry
+        try:
+            if attempt > 0:
+                logger.info("Retrying Ollama extraction (attempt %d) after 2s …", attempt + 1)
+                time.sleep(2)
+            raw_response = _call_ollama_extraction(ocr_result.raw_text, cat_result.expense_type)
+            parsed = _extract_json(raw_response)
+            logger.debug("Ollama extraction parsed fields: %s", list(parsed.keys()))
+            # If the parse returned an empty dict the response was probably truncated;
+            # log a warning but still build — heuristic will fill in what's missing.
+            if not parsed:
+                logger.warning(
+                    "Ollama extraction returned empty/unparseable JSON on attempt %d "
+                    "(response len=%d) — falling back to heuristics.",
+                    attempt + 1, len(raw_response),
+                )
+                return _heuristic_fallback(ocr_result, cat_result)
+            return _build_extracted_expense(parsed, cat_result.expense_type, ocr_result)
+        except Exception as exc:
+            last_exc = exc
+            logger.warning(
+                "Ollama extraction failed (attempt %d): %s", attempt + 1, exc
+            )
+
+    logger.warning("Ollama extraction failed after retries — using heuristic fallback. Last error: %s", last_exc)
+    return _heuristic_fallback(ocr_result, cat_result)
 
 
 def _call_ollama_extraction(raw_text: str, expense_type: str) -> str:
@@ -213,22 +233,97 @@ def _safe_int(val) -> Optional[int]:
         return None
 
 
+# Month abbreviation lookup shared by _parse_date and _extract_first_date
+_MONTH_ABBR: dict[str, int] = {
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4,  "may": 5,  "jun": 6,
+    "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+    # full names too
+    "january": 1, "february": 2, "march": 3, "april": 4, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10,
+    "november": 11, "december": 12,
+}
+
+
 def _parse_date(val) -> Optional[date]:
+    """
+    Parse a date value into a Python date object.
+
+    Handles the formats a real-world LLM might return:
+      • YYYY-MM-DD         (ISO — preferred)
+      • DD/MM/YYYY  DD-MM-YYYY  DD.MM.YYYY
+      • DD/MM/YY    DD-MM-YY
+      • D Mon YYYY  (e.g. "8 Jun 2026")
+      • Mon D YYYY  (e.g. "Jun 8 2026")
+      • Mon D, YYYY (e.g. "Jun 8, 2026")
+      • D Month YYYY (e.g. "8 June 2026")
+      • Weekday, D Mon YYYY (e.g. "Mon, 8 Jun 2026")
+    """
     if val is None:
         return None
     s = str(val).strip()
-    m = re.match(r"^(\d{4})-(\d{2})-(\d{2})$", s)
+    if not s or s.lower() in ("null", "none", "n/a", ""):
+        return None
+
+    # Remove leading weekday like "Mon, " or "Monday, "
+    s = re.sub(r"^(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*[,\s]+", "", s, flags=re.IGNORECASE)
+
+    # ── ISO: YYYY-MM-DD ────────────────────────────────────────────────────────
+    m = re.match(r"^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$", s)
     if m:
         try:
             return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
         except ValueError:
-            return None
-    m = re.match(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$", s)
+            pass
+
+    # ── DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY ─────────────────────────────────
+    m = re.match(r"^(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{4})$", s)
     if m:
         try:
             return date(int(m.group(3)), int(m.group(2)), int(m.group(1)))
         except ValueError:
-            return None
+            pass
+
+    # ── DD/MM/YY (2-digit year) ────────────────────────────────────────────────
+    m = re.match(r"^(\d{1,2})[/\-](\d{1,2})[/\-](\d{2})$", s)
+    if m:
+        try:
+            yr = int(m.group(3))
+            yr = 2000 + yr if yr < 50 else 1900 + yr
+            return date(yr, int(m.group(2)), int(m.group(1)))
+        except ValueError:
+            pass
+
+    # ── "8 Jun 2026" or "8 June 2026" ─────────────────────────────────────────
+    m = re.match(r"^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$", s)
+    if m:
+        month = _MONTH_ABBR.get(m.group(2).lower())
+        if month:
+            try:
+                return date(int(m.group(3)), month, int(m.group(1)))
+            except ValueError:
+                pass
+
+    # ── "Jun 8 2026" or "Jun 8, 2026" ─────────────────────────────────────────
+    m = re.match(r"^([A-Za-z]+)\s+(\d{1,2})[,\s]+(\d{4})$", s)
+    if m:
+        month = _MONTH_ABBR.get(m.group(1).lower())
+        if month:
+            try:
+                return date(int(m.group(3)), month, int(m.group(2)))
+            except ValueError:
+                pass
+
+    # ── "Jun 2026" (no day — use day=1 as best guess) ─────────────────────────
+    m = re.match(r"^([A-Za-z]+)\s+(\d{4})$", s)
+    if m:
+        month = _MONTH_ABBR.get(m.group(1).lower())
+        if month:
+            try:
+                return date(int(m.group(2)), month, 1)
+            except ValueError:
+                pass
+
+    logger.debug("_parse_date: could not parse %r", val)
     return None
 
 
@@ -250,12 +345,39 @@ def _extract_distance_km(text: str) -> Optional[float]:
 
 
 def _extract_first_date(text: str) -> Optional[date]:
-    for pattern in [r"(\d{4}-\d{2}-\d{2})", r"(\d{1,2}/\d{1,2}/\d{4})", r"(\d{1,2}-\d{1,2}-\d{4})"]:
+    """
+    Scan raw OCR text and return the first recognisable date.
+    Tries numeric patterns first (most reliable), then month-name patterns.
+    """
+    # Numeric patterns
+    for pattern in [
+        r"(\d{4}-\d{2}-\d{2})",
+        r"(\d{1,2}/\d{1,2}/\d{4})",
+        r"(\d{1,2}-\d{1,2}-\d{4})",
+        r"(\d{1,2}\.\d{1,2}\.\d{4})",
+        r"(\d{1,2}/\d{1,2}/\d{2})\b",
+    ]:
         m = re.search(pattern, text)
         if m:
             result = _parse_date(m.group(1))
             if result:
                 return result
+
+    # Month-name patterns: "8 Jun 2026", "Jun 8, 2026", "8 June 2026"
+    month_names = (
+        r"Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|"
+        r"Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?"
+    )
+    for pattern in [
+        rf"(\d{{1,2}}\s+(?:{month_names})\s+\d{{4}})",
+        rf"((?:{month_names})\s+\d{{1,2}}[,\s]+\d{{4}})",
+    ]:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            result = _parse_date(m.group(1))
+            if result:
+                return result
+
     return None
 
 

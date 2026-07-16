@@ -25,6 +25,7 @@ def main() -> None:
 
     receipts = [
         ("hotel_marriott.pdf", _hotel_content()),
+        ("duplicate_hotel_marriott.pdf", _hotel_content()),   # identical → DUPLICATE test
         ("taxi_ola.pdf", _taxi_content()),
         ("flight_indigo.pdf", _flight_content()),
         ("meals_restaurant.pdf", _meals_content()),
@@ -51,6 +52,7 @@ def main() -> None:
 
 
 def _hotel_content():
+    # Total = INR 18,000 to match seeded CCT001 (Marriott, 2026-07-20, ₹18,000)
     return [
         "**MARRIOTT BENGALURU",
         "**No. 12, Vittal Mallya Road, Bengaluru 560001",
@@ -58,19 +60,19 @@ def _hotel_content():
         "",
         "FOLIO / TAX INVOICE",
         "Invoice No : MBL-2026-00421",
-        "Guest Name : Rahul Sharma",
+        "Guest Name : Priya Sharma",
         "Room No    : 412",
         "",
-        "Check-in   : 2026-07-19",
-        "Check-out  : 2026-07-21",
+        "Check-in   : 2026-07-18",
+        "Check-out  : 2026-07-20",
         "No. of Nights : 2",
         "",
-        "Room Charges    : INR 4,500.00 / night",
-        "Room x 2 nights : INR 9,000.00",
-        "GST (12%)       : INR 1,080.00",
-        "Service Charge  : INR 450.00",
+        "Room Charges    : INR 7,200.00 / night",
+        "Room x 2 nights : INR 14,400.00",
+        "GST (12%)       : INR 1,728.00",
+        "Service Charge  : INR 1,872.00",
         "------------------------------",
-        "TOTAL PAYABLE   : INR 10,530.00",
+        "TOTAL PAYABLE   : INR 18,000.00",
         "",
         "Payment Mode: Corporate Card",
         "Card last 4 digits: 4242",
@@ -78,29 +80,31 @@ def _hotel_content():
 
 
 def _taxi_content():
+    # Total = INR 650 to match seeded CCT003 (Ola, 2026-07-20, ₹650)
     return [
         "**OLA CABS",
         "Ride Receipt",
         "",
-        "Booking ID  : OLA-BLR-20260721-88421",
-        "Date        : 2026-07-21",
+        "Booking ID  : OLA-BLR-20260720-88421",
+        "Date        : 2026-07-20",
         "Time        : 09:35 AM",
         "",
         "Pickup  : Marriott Bengaluru, Vittal Mallya Road",
         "Drop    : Kempegowda International Airport",
         "Distance: 38.4 km",
         "",
-        "Base Fare   : INR 380.00",
-        "Toll        : INR 40.00",
-        "GST (5%)    : INR 21.00",
+        "Base Fare   : INR 570.00",
+        "Toll        : INR 50.00",
+        "GST (5%)    : INR 30.00",
         "------------------------------",
-        "TOTAL       : INR 441.00",
+        "TOTAL       : INR 650.00",
         "",
         "Payment: Corporate Card ****4242",
     ]
 
 
 def _flight_content():
+    # Total = INR 5,500 to match seeded CCT002 (IndiGo, 2026-07-19, ₹5,500)
     return [
         "**IndiGo",
         "e-Ticket / Booking Confirmation",
@@ -109,48 +113,48 @@ def _flight_content():
         "Ticket Number  : 423-1234567890",
         "Booking Date   : 2026-07-15",
         "",
-        "Passenger      : SHARMA/RAHUL MR",
+        "Passenger      : SHARMA/PRIYA MS",
         "Flight         : 6E 501",
         "From           : BLR (Bengaluru)",
         "To             : BOM (Mumbai)",
-        "Date           : 21 Jul 2026",
+        "Date           : 2026-07-19",
         "Departure      : 11:40",
         "Arrival        : 13:15",
         "Seat           : 14C",
         "Class          : Economy",
         "",
-        "Base Fare      : INR 3,200.00",
-        "Taxes & Fees   : INR 680.00",
+        "Base Fare      : INR 4,600.00",
+        "Taxes & Fees   : INR 900.00",
         "------------------------------",
-        "TOTAL          : INR 3,880.00",
+        "TOTAL          : INR 5,500.00",
         "",
         "Payment: Corporate Card ****4242",
     ]
 
 
 def _meals_content():
+    # Total = INR 950 to match seeded CCT004 (The Fatty Bao, 2026-07-21, ₹950)
     return [
-        "**MAINLAND CHINA",
+        "**THE FATTY BAO",
         "No. 8, Residency Road, Bengaluru",
         "GSTIN: 29ABCDE1234F1Z5",
         "",
-        "Table : 12  |  Covers: 3",
-        "Date  : 2026-07-20",
+        "Table : 12  |  Covers: 2",
+        "Date  : 2026-07-21",
         "Time  : 8:45 PM",
         "",
-        "Veg Spring Roll (2)       :  INR 320",
-        "Kung Pao Chicken          :  INR 540",
-        "Steamed Rice (3)          :  INR 240",
-        "Mocktails (3)             :  INR 510",
+        "Pork Belly Bao (2)        :  INR 420",
+        "Ramen Bowl                :  INR 350",
+        "Soft Drinks (2)           :  INR 100",
         "------------------------------",
-        "Sub Total                 : INR 1,610",
-        "GST (5%)                  :   INR  80",
-        "Service Charge (10%)      :  INR 161",
+        "Sub Total                 : INR 870",
+        "GST (5%)                  :  INR  44",
+        "Service Charge (4.1%)     :  INR  36",
         "------------------------------",
-        "TOTAL                     : INR 1,851",
+        "TOTAL                     : INR 950",
         "",
         "Payment: Corporate Card ****4242",
-        "Business Purpose: Team dinner - client meeting",
+        "Business Purpose: Team lunch",
     ]
 
 
