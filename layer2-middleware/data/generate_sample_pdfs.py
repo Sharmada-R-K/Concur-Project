@@ -24,16 +24,12 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     receipts = [
-        ("hotel_marriott.pdf",      _hotel_content()),
-        ("taxi_ola.pdf",            _taxi_content()),
-        ("flight_indigo.pdf",       _flight_content()),
-        ("meals_restaurant.pdf",    _meals_content()),
-        ("meals_conference.pdf",    _conference_content()),
-        ("misc_pharmacy.pdf",       _pharmacy_content()),
-        # Duplicate detection test — identical to hotel_marriott.pdf
-        # Upload this AFTER hotel_marriott.pdf in a second report for EMP001.
-        # Layer 3 Step 6 will flag DUPLICATE_RECEIPT_DETECTED.
-        ("duplicate_hotel_marriott.pdf", _hotel_content()),
+        ("hotel_marriott.pdf", _hotel_content()),
+        ("taxi_ola.pdf", _taxi_content()),
+        ("flight_indigo.pdf", _flight_content()),
+        ("meals_restaurant.pdf", _meals_content()),
+        ("meals_conference.pdf", _conference_content()),
+        ("misc_pharmacy.pdf", _pharmacy_content()),
     ]
 
     for filename, lines in receipts:
@@ -55,7 +51,6 @@ def main() -> None:
 
 
 def _hotel_content():
-    # Matches CCT001: Marriott, INR 18000, 2026-07-20, EMP001
     return [
         "**MARRIOTT BENGALURU",
         "**No. 12, Vittal Mallya Road, Bengaluru 560001",
@@ -63,19 +58,19 @@ def _hotel_content():
         "",
         "FOLIO / TAX INVOICE",
         "Invoice No : MBL-2026-00421",
-        "Guest Name : Priya Sharma",
+        "Guest Name : Rahul Sharma",
         "Room No    : 412",
         "",
-        "Check-in   : 2026-07-20",
-        "Check-out  : 2026-07-23",
-        "No. of Nights : 3",
+        "Check-in   : 2026-07-19",
+        "Check-out  : 2026-07-21",
+        "No. of Nights : 2",
         "",
-        "Room Charges    : INR 5,000.00 / night",
-        "Room x 3 nights : INR 15,000.00",
-        "GST (12%)       : INR 1,800.00",
-        "Service Charge  : INR 1,200.00",
+        "Room Charges    : INR 4,500.00 / night",
+        "Room x 2 nights : INR 9,000.00",
+        "GST (12%)       : INR 1,080.00",
+        "Service Charge  : INR 450.00",
         "------------------------------",
-        "TOTAL PAYABLE   : INR 18,000.00",
+        "TOTAL PAYABLE   : INR 10,530.00",
         "",
         "Payment Mode: Corporate Card",
         "Card last 4 digits: 4242",
@@ -83,78 +78,76 @@ def _hotel_content():
 
 
 def _taxi_content():
-    # Matches CCT003: Ola, INR 650, 2026-07-20, EMP001
     return [
         "**OLA CABS",
         "Ride Receipt",
         "",
-        "Booking ID  : OLA-BLR-20260720-88421",
-        "Date        : 2026-07-20",
+        "Booking ID  : OLA-BLR-20260721-88421",
+        "Date        : 2026-07-21",
         "Time        : 09:35 AM",
         "",
-        "Pickup  : Bengaluru Airport",
-        "Drop    : Marriott Bengaluru, Vittal Mallya Road",
-        "Distance: 42.0 km",
+        "Pickup  : Marriott Bengaluru, Vittal Mallya Road",
+        "Drop    : Kempegowda International Airport",
+        "Distance: 38.4 km",
         "",
-        "Base Fare   : INR 590.00",
+        "Base Fare   : INR 380.00",
         "Toll        : INR 40.00",
-        "GST (5%)    : INR 20.00",
+        "GST (5%)    : INR 21.00",
         "------------------------------",
-        "TOTAL       : INR 650.00",
+        "TOTAL       : INR 441.00",
         "",
         "Payment: Corporate Card ****4242",
     ]
 
 
 def _flight_content():
-    # Matches CCT002: IndiGo Airlines, INR 5500, 2026-07-19, EMP001
     return [
         "**IndiGo",
         "e-Ticket / Booking Confirmation",
         "",
         "PNR            : 6E-WX842",
         "Ticket Number  : 423-1234567890",
-        "Booking Date   : 2026-07-10",
+        "Booking Date   : 2026-07-15",
         "",
-        "Passenger      : SHARMA/PRIYA MS",
+        "Passenger      : SHARMA/RAHUL MR",
         "Flight         : 6E 501",
-        "From           : BOM (Mumbai)",
-        "To             : BLR (Bengaluru)",
-        "Date           : 19 Jul 2026",
-        "Departure      : 08:20",
-        "Arrival        : 10:05",
+        "From           : BLR (Bengaluru)",
+        "To             : BOM (Mumbai)",
+        "Date           : 21 Jul 2026",
+        "Departure      : 11:40",
+        "Arrival        : 13:15",
         "Seat           : 14C",
         "Class          : Economy",
         "",
-        "Base Fare      : INR 4,600.00",
-        "Taxes & Fees   : INR 900.00",
+        "Base Fare      : INR 3,200.00",
+        "Taxes & Fees   : INR 680.00",
         "------------------------------",
-        "TOTAL          : INR 5,500.00",
+        "TOTAL          : INR 3,880.00",
         "",
         "Payment: Corporate Card ****4242",
     ]
 
 
 def _meals_content():
-    # Matches CCT004: The Fatty Bao, INR 950, 2026-07-21, EMP001
     return [
-        "**THE FATTY BAO",
-        "No. 5, Residency Road, Bengaluru",
+        "**MAINLAND CHINA",
+        "No. 8, Residency Road, Bengaluru",
         "GSTIN: 29ABCDE1234F1Z5",
         "",
-        "Table : 8  |  Covers: 2",
-        "Date  : 2026-07-21",
-        "Time  : 8:30 PM",
+        "Table : 12  |  Covers: 3",
+        "Date  : 2026-07-20",
+        "Time  : 8:45 PM",
         "",
-        "Pork Belly Bao (2)        :  INR 480",
-        "Edamame                   :  INR 220",
-        "Drinks (2)                :  INR 120",
+        "Veg Spring Roll (2)       :  INR 320",
+        "Kung Pao Chicken          :  INR 540",
+        "Steamed Rice (3)          :  INR 240",
+        "Mocktails (3)             :  INR 510",
         "------------------------------",
-        "Sub Total                 : INR 820",
-        "GST (5%)                  :  INR  41",
-        "Service Charge (10%)      :  INR  89",
+        "Sub Total                 : INR 1,610",
+        "GST (5%)                  :   INR  80",
+        "Service Charge (10%)      :  INR 161",
         "------------------------------",
-        "TOTAL                     : INR 950",
+        "TOTAL                     : INR 1,851",
         "",
         "Payment: Corporate Card ****4242",
         "Business Purpose: Team dinner - client meeting",

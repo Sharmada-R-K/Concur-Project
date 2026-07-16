@@ -25,7 +25,7 @@ from src.models.receipt_models import ExtractedExpense
 
 logger = logging.getLogger(__name__)
 
-MATCH_THRESHOLD = 0.80
+MATCH_THRESHOLD = 0.72
 
 # Composite score weights — must sum to 1.0
 _W_VENDOR = 0.40
@@ -216,6 +216,7 @@ def _normalise_vendor(name: str) -> str:
     Normalise a vendor name for fuzzy comparison:
     - Lowercase
     - Strip punctuation
+    - Strip common city suffixes (e.g. "Marriott Bengaluru" → "Marriott")
     - Expand common abbreviations
     """
     import re
@@ -223,12 +224,24 @@ def _normalise_vendor(name: str) -> str:
     name = re.sub(r"[^\w\s]", " ", name)  # strip punctuation
     name = re.sub(r"\s+", " ", name)      # collapse whitespace
 
+    # Strip city names appended by LLM extraction
+    _CITY_SUFFIXES = [
+        "bengaluru", "bangalore", "mumbai", "delhi", "hyderabad",
+        "chennai", "pune", "kolkata", "india", "international",
+        "hotel", "pvt ltd", "pvt", "ltd", "private limited",
+    ]
+    for city in _CITY_SUFFIXES:
+        name = re.sub(r"\b" + city + r"\b", "", name).strip()
+    name = re.sub(r"\s+", " ", name).strip()
+
     abbreviations = {
         "mrt": "marriott",
         "hil": "hilton",
         "hyatt": "hyatt",
         "radis": "radisson",
         "ib": "ibis",
+        "6e": "indigo",
+        "indigo airlines": "indigo airlines",
     }
     for abbr, full in abbreviations.items():
         if name.strip() == abbr:

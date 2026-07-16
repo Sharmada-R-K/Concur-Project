@@ -43,7 +43,7 @@ LAYER3_BASE_URL: str = os.getenv("LAYER3_BASE_URL", "http://localhost:8001")
 # API key sent as X-API-Key header on every Layer 3 request.
 # In local dev, Layer 3 (concur-stub) does not enforce auth, but we keep
 # the header so the pattern is in place for real Concur integration.
-LAYER3_API_KEY: str = os.getenv("LAYER3_API_KEY", "concur-stub-dev-key")
+LAYER3_API_KEY: str = os.getenv("LAYER3_API_KEY", "")
 
 # All Layer 3 endpoint paths live here ONLY.
 # Aligned with concur-stub actual routers (as of 2026-01):
@@ -55,8 +55,8 @@ LAYER3_ENDPOINTS: dict[str, str] = {
     "register_receipt": "/api/v4/receipts/register",
     # GET    — list corporate card transactions for an employee
     "available_transactions": "/api/v4/card-transactions",
-    # POST   — bulk submit all expenses for a report
-    "submit_expenses": "/api/v4/expense-reports/{report_id}/expenses",
+    # NOTE: bulk expense submission is handled directly by the BFF (Layer 1),
+    # not by Layer 2. Layer 2 only registers receipts and matches transactions.
 }
 
 

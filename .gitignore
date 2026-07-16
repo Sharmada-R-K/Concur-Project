@@ -3,43 +3,40 @@
 venv/
 env/
 __pycache__/
-*.py[cod]
+*.pyc
 *.pyo
 *.egg-info/
 dist/
-build/
 
-# ── Environment variable files (contain secrets) ─────────────────────────────
-.env
-!.env.example
-
-# ── Node.js ───────────────────────────────────────────────────────────────────
+# ── Node / React ──────────────────────────────────────────────────────────────
 node_modules/
+expense-copilot/frontend/build/
 npm-debug.log*
 
-# ── React build output ────────────────────────────────────────────────────────
-expense-copilot/frontend/build/
+# ── Secrets — NEVER commit these ─────────────────────────────────────────────
+.env
+*.pem
+*.key
 
-# ── SQLite database files (auto-created on first run from seed data) ──────────
+# ── Databases ─────────────────────────────────────────────────────────────────
 *.db
 *.db-shm
 *.db-wal
+*.sqlite
+*.sqlite3
 
-# ── macOS system files ────────────────────────────────────────────────────────
+# ── OS / Editor junk ─────────────────────────────────────────────────────────
 .DS_Store
-.DS_Store?
-._*
-
-# ── IDE / editor ──────────────────────────────────────────────────────────────
-.vscode/
+Thumbs.db
 .idea/
+.vscode/
 *.swp
-*.swo
 
-# ── pytest cache ──────────────────────────────────────────────────────────────
-.pytest_cache/
-.coverage
-htmlcov/
+# ── Test / demo artifacts ─────────────────────────────────────────────────────
+demo_receipt.py
+demo_full.py
+endobj
+Receipts/
 
-# ── Layer 2 Docling model cache (downloaded on first run) ─────────────────────
-layer2-middleware/.docling/
+# ── Docling model cache ───────────────────────────────────────────────────────
+.docling/

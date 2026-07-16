@@ -135,3 +135,153 @@
   color: #0e6027;
   margin: 0;
 }
+
+/* ── Section count badge ── */
+.section-count {
+  font-weight: 400;
+  color: #6f6f6f;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PIPELINE TRACKER — Industry-grade step-by-step tracker
+   ═══════════════════════════════════════════════════════ */
+.pipeline-tracker {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.pipeline-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f6f6f;
+  margin: 0 0 1rem 0;
+}
+
+.pipeline-steps {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+}
+
+.pipeline-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 90px;
+}
+
+.pipeline-step-indicator {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 0.6rem;
+}
+
+.pipeline-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  z-index: 1;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* connector line between dots */
+.pipeline-step-line {
+  height: 2px;
+  flex: 1;
+  margin: 0 -4px;
+  transition: background 0.4s;
+}
+
+.pipeline-step-line--done { background: #24a148; }
+.pipeline-step-line--idle { background: #e0e0e0; }
+
+/* idle state */
+.pipeline-step--idle .pipeline-step-dot {
+  background: #f4f4f4;
+  border: 2px solid #c6c6c6;
+  color: #6f6f6f;
+}
+
+/* active / in-progress */
+.pipeline-step--active .pipeline-step-dot {
+  background: #0f62fe;
+  border: 2px solid #0f62fe;
+  color: #ffffff;
+}
+
+/* done */
+.pipeline-step--done .pipeline-step-dot {
+  background: #24a148;
+  border: 2px solid #24a148;
+  color: #ffffff;
+}
+
+/* error */
+.pipeline-step--error .pipeline-step-dot {
+  background: #da1e28;
+  border: 2px solid #da1e28;
+  color: #ffffff;
+}
+
+.pipeline-step-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  padding: 0 4px;
+}
+
+.pipeline-step-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #161616;
+  line-height: 1.3;
+}
+
+.pipeline-step-desc {
+  font-size: 0.65rem;
+  color: #6f6f6f;
+  line-height: 1.3;
+}
+
+.pipeline-step-stat {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #24a148;
+  margin-top: 2px;
+}
+
+/* spinning animation for active step */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.pipeline-spinner {
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  font-style: normal;
+}
+
+/* label colour by state */
+.pipeline-step--active .pipeline-step-label { color: #0f62fe; }
+.pipeline-step--done   .pipeline-step-label { color: #24a148; }
+.pipeline-step--error  .pipeline-step-label { color: #da1e28; }

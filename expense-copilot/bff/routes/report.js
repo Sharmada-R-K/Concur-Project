@@ -10,7 +10,7 @@ const layer2 = require('../services/layer2Service');
 // Accept files in memory so we can forward buffers to Layer 2
 const upload = multer({ storage: multer.memoryStorage() });
 
-// Hardcoded for prototype — in production this comes from auth/session
+// Default employee — overridden by the employeeId field sent from the frontend
 const DEFAULT_EMPLOYEE_ID = 'EMP001';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,6 +63,11 @@ function toL3ExpenseInput(exp) {
   // Map MEALS → MEAL to match Layer 3 ExpenseType enum
   const expenseType = (exp.expenseType === 'MEALS') ? 'MEAL' : exp.expenseType;
 
+  // Layer 3 PaymentType enum: CORPORATE_CARD | PERSONAL_CASH | CORPORATE_CASH
+  // Layer 2 returns OUT_OF_POCKET for unmatched — map it to PERSONAL_CASH
+  const rawPayment = exp.paymentType || 'PERSONAL_CASH';
+  const paymentType = (rawPayment === 'OUT_OF_POCKET') ? 'PERSONAL_CASH' : rawPayment;
+
   const input = {
     expenseType,
     vendor:          exp.vendor   || 'UNKNOWN',
@@ -70,7 +75,7 @@ function toL3ExpenseInput(exp) {
     currency:        exp.currency || 'INR',
     transactionDate: exp.transactionDate || new Date().toISOString().split('T')[0],
     city:            exp.city     || 'UNKNOWN',
-    paymentType:     (exp.paymentType === 'OUT_OF_POCKET' ? 'PERSONAL_CASH' : exp.paymentType) || 'PERSONAL_CASH',
+    paymentType,
   };
 
   // Build itemization for HOTEL
@@ -97,8 +102,8 @@ function toL3ExpenseInput(exp) {
   if (expenseType === 'FLIGHT' && exp.airfareDetail) {
     const ad = exp.airfareDetail;
     input.airfareDetail = {
-      origin:       ad.origin,
-      destination:  ad.destination,
+      origin:       ad.origin       ?? 'UNKNOWN',
+      destination:  ad.destination  ?? 'UNKNOWN',
       travelClass:  ad.travel_class ?? ad.travelClass ?? 'ECONOMY',
       flightNumber: ad.flight_number ?? ad.flightNumber ?? null,
       ticketNumber: ad.ticket_number ?? ad.ticketNumber ?? null,
@@ -109,9 +114,9 @@ function toL3ExpenseInput(exp) {
   if (expenseType === 'TAXI' && exp.taxiDetail) {
     const td = exp.taxiDetail;
     input.taxiDetail = {
-      fromLocation: td.from_location ?? td.fromLocation,
-      toLocation:   td.to_location   ?? td.toLocation,
-      distanceKm:   td.distance_km   ?? td.distanceKm ?? null,
+      fromLocation: td.from_location ?? td.fromLocation ?? 'UNKNOWN',
+      toLocation:   td.to_location   ?? td.toLocation   ?? 'UNKNOWN',
+      distanceKm:   td.distance_km   ?? td.distanceKm   ?? null,
     };
   }
 
@@ -133,12 +138,13 @@ function toL3ExpenseInput(exp) {
 // it in Layer 3 so the submit step can find it later.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/', async (req, res) => {
-  const { reportName, businessPurpose, employeeId, policy, reportCategory } = req.body;
+  const { employeeId, reportName, businessPurpose, policy, reportCategory } = req.body;
 
-  // Validate all 4 mandatory fields
+  // Validate mandatory fields
   const missing = [];
   if (!reportName)      missing.push('reportName');
   if (!businessPurpose) missing.push('businessPurpose');
+  if (!policy)          missing.push('policy');
   if (!reportCategory)  missing.push('reportCategory');
 
   if (missing.length > 0) {
@@ -147,7 +153,7 @@ router.post('/', async (req, res) => {
 
   const reportId = `RPT-${uuidv4().slice(0, 8).toUpperCase()}`;
 
-  // Use submitted employeeId if provided, otherwise fall back to EMP001
+  // Use employeeId from request body, fallback to default
   const resolvedEmployeeId = employeeId || DEFAULT_EMPLOYEE_ID;
 
   try {
@@ -156,7 +162,7 @@ router.post('/', async (req, res) => {
       employeeId: resolvedEmployeeId,
       reportName,
       businessPurpose,
-      policy: policy || 'STANDARD',
+      policy,
       reportCategory,
     });
   } catch (err) {
@@ -168,7 +174,7 @@ router.post('/', async (req, res) => {
     employeeId: resolvedEmployeeId,
     reportName,
     businessPurpose,
-    policy: policy || 'STANDARD',
+    policy,
     reportCategory,
   });
 
@@ -285,13 +291,13 @@ router.post('/:reportId/receipts', upload.array('files'), async (req, res) => {
 // Updates folder status to SUBMITTED on success.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/:reportId/submit', async (req, res) => {
-  // Always use the URL param as the authoritative reportId —
-  // never rely on folder.reportId which can be undefined after a BFF restart.
-  const reportId = req.params.reportId;
-  const folder   = reportStore.get(reportId) || { reportId, employeeId: DEFAULT_EMPLOYEE_ID, processedExpenses: [], status: 'DRAFT' };
+  const folder = reportStore.get(req.params.reportId);
+  if (!folder) {
+    return res.status(404).json({ error: 'Report not found', reportId: req.params.reportId });
+  }
 
   if (folder.status === 'SUBMITTED') {
-    return res.status(409).json({ error: 'Report already submitted', reportId });
+    return res.status(409).json({ error: 'Report already submitted', reportId: folder.reportId });
   }
 
   const expenses = (folder.processedExpenses || [])
@@ -303,23 +309,23 @@ router.post('/:reportId/submit', async (req, res) => {
     let expenseResp = null;
     if (expenses.length > 0) {
       expenseResp = await layer3.submitExpenses(
-        reportId,
+        folder.reportId,
         folder.employeeId,
         expenses
       );
     }
 
     // Step 2 — transition report to SUBMITTED
-    const submitResp = await layer3.submitReport(reportId);
+    const submitResp = await layer3.submitReport(folder.reportId);
 
     // submitResp shape: { reportId, status, message }
-    reportStore.update(reportId, {
+    reportStore.update(folder.reportId, {
       status:      'SUBMITTED',
       submittedAt: new Date().toISOString(),
     });
 
     res.json({
-      reportId,
+      reportId:    folder.reportId,
       status:      submitResp.status || 'SUBMITTED',
       message:     submitResp.message || 'Report submitted successfully',
       warnings:    expenseResp?.warnings || [],
