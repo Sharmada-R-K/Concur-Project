@@ -285,13 +285,13 @@ router.post('/:reportId/receipts', upload.array('files'), async (req, res) => {
 // Updates folder status to SUBMITTED on success.
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/:reportId/submit', async (req, res) => {
-  const folder = reportStore.get(req.params.reportId);
-  if (!folder) {
-    return res.status(404).json({ error: 'Report not found', reportId: req.params.reportId });
-  }
+  // Always use the URL param as the authoritative reportId —
+  // never rely on folder.reportId which can be undefined after a BFF restart.
+  const reportId = req.params.reportId;
+  const folder   = reportStore.get(reportId) || { reportId, employeeId: DEFAULT_EMPLOYEE_ID, processedExpenses: [], status: 'DRAFT' };
 
   if (folder.status === 'SUBMITTED') {
-    return res.status(409).json({ error: 'Report already submitted', reportId: folder.reportId });
+    return res.status(409).json({ error: 'Report already submitted', reportId });
   }
 
   const expenses = (folder.processedExpenses || [])
@@ -303,23 +303,23 @@ router.post('/:reportId/submit', async (req, res) => {
     let expenseResp = null;
     if (expenses.length > 0) {
       expenseResp = await layer3.submitExpenses(
-        folder.reportId,
+        reportId,
         folder.employeeId,
         expenses
       );
     }
 
     // Step 2 — transition report to SUBMITTED
-    const submitResp = await layer3.submitReport(folder.reportId);
+    const submitResp = await layer3.submitReport(reportId);
 
     // submitResp shape: { reportId, status, message }
-    reportStore.update(folder.reportId, {
+    reportStore.update(reportId, {
       status:      'SUBMITTED',
       submittedAt: new Date().toISOString(),
     });
 
     res.json({
-      reportId:    folder.reportId,
+      reportId,
       status:      submitResp.status || 'SUBMITTED',
       message:     submitResp.message || 'Report submitted successfully',
       warnings:    expenseResp?.warnings || [],
